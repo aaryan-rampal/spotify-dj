@@ -78,6 +78,25 @@ class SpotifyConfig:
         }
 
 
+class JITConfig:
+    """Configuration for Just-In-Time queue injection system."""
+
+    # Seconds before song ends to trigger injection
+    INJECTION_THRESHOLD = 15
+
+    # Seconds between playback status checks
+    POLL_INTERVAL = 1.5
+
+    # Minimum songs to keep in Spotify's queue
+    MIN_QUEUE_SIZE = 1
+
+    # Retry attempts for failed injections
+    RETRY_ATTEMPTS = 3
+
+    # Delay between retry attempts in seconds
+    RETRY_DELAY = 0.5
+
+
 class AppConfig:
     """General application configuration."""
 

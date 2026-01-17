@@ -2,9 +2,11 @@
 Spotify client for queue management and playback control.
 """
 import os
+import time
 from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+from config import JITConfig
 
 
 class SpotifyClient:
@@ -92,40 +94,136 @@ class SpotifyClient:
 
     def clear_queue(self):
         """
-        Clear all songs from the user's queue.
+        Stub for queue clearing - not applicable with JIT system.
 
-        Note: The Spotify Web API doesn't provide a direct "remove from queue" endpoint.
-        This method uses the approach of pausing and resuming playback to effectively
-        clear the queue, or returns False if the queue is already empty.
+        The JIT (Just-In-Time) queue injection system eliminates the need to clear queues.
+        Instead of clearing and re-adding, we inject songs strategically as they're needed.
 
         Returns:
-            bool: True if successful or queue was empty, False on error
+            bool: False (not used in JIT system)
+        """
+        print("Note: clear_queue() is not used in JIT system. Using injection instead.")
+        return False
+
+    def start_playback(self, track_uri):
+        """
+        Start playing a specific track, clearing queue and starting new playback.
+
+        Args:
+            track_uri (str): Spotify track URI to start playing
+
+        Raises:
+            Exception: If no active device or Spotify API error
+
+        Returns:
+            bool: True if successful, False otherwise
         """
         try:
-            # Get current queue
-            queue_data = self.sp.queue()
-            queue_items = queue_data.get("queue", []) if queue_data else []
+            devices = self.sp.devices()
+            if not devices or not devices.get("devices"):
+                raise Exception("No active Spotify device found")
 
-            if not queue_items:
-                print("Queue is already empty.")
-                return True
+            active_device = None
+            for device in devices["devices"]:
+                if device.get("is_active"):
+                    active_device = device
+                    break
 
-            # Since Spotify Web API doesn't support removing from queue directly,
-            # we acknowledge the limitation. For a real implementation, users can:
-            # 1. Use the Spotify client directly to remove songs
-            # 2. Create a playlist and use that instead
-            # 3. Use start_playback to restart with new tracks
-            #
-            # For now, we return True to indicate willingness to clear, but in practice
-            # we'll rely on adding new songs to the queue (which will follow the current track)
+            if not active_device:
+                active_device = devices["devices"][0]
 
-            print(f"Note: Queue has {len(queue_items)} track(s). Spotify API doesn't support")
-            print("direct queue removal. New tracks will be added to the queue.")
-            print("The queue will be effectively replaced as new songs are added.")
+            self.sp.start_playback(device_id=active_device["id"], uris=[track_uri])
             return True
-
         except Exception as e:
-            print(f"Error checking queue: {e}")
+            print(f"Error starting playback: {e}")
+            return False
+
+    def get_playback_status(self):
+        """
+        Get current playback status including progress and duration.
+
+        Returns:
+            dict: {"is_playing": bool, "progress_ms": int, "duration_ms": int, "device": str}
+                  Returns dict with all values as None/empty if no playback active
+
+        Returns:
+            None if error occurred
+        """
+        try:
+            playback = self.sp.current_playback()
+            if not playback:
+                return {"is_playing": False, "progress_ms": 0, "duration_ms": 0, "device": None}
+
+            if not playback.get("item"):
+                return {"is_playing": False, "progress_ms": 0, "duration_ms": 0, "device": None}
+
+            return {
+                "is_playing": playback.get("is_playing", False),
+                "progress_ms": playback.get("progress_ms", 0),
+                "duration_ms": playback["item"].get("duration_ms", 0),
+                "device": playback.get("device", {}).get("name", "Unknown")
+            }
+        except Exception as e:
+            print(f"Error getting playback status: {e}")
+            return None
+
+    def calculate_time_until_end(self):
+        """
+        Calculate seconds remaining until current track ends.
+
+        Returns:
+            float: Seconds until end of current track, or -1 if no playback
+        """
+        status = self.get_playback_status()
+        if status is None or not status.get("is_playing"):
+            return -1
+
+        progress_ms = status.get("progress_ms", 0)
+        duration_ms = status.get("duration_ms", 0)
+
+        if duration_ms <= 0:
+            return -1
+
+        time_remaining_ms = duration_ms - progress_ms
+        if time_remaining_ms < 0:
+            return 0
+
+        return time_remaining_ms / 1000.0
+
+    def should_inject_next(self):
+        """
+        Check if it's time to inject the next song.
+
+        Returns True if time remaining <= INJECTION_THRESHOLD seconds.
+
+        Returns:
+            bool: True if injection should happen now, False otherwise
+        """
+        try:
+            time_until_end = self.calculate_time_until_end()
+            if time_until_end < 0:
+                return False
+
+            return time_until_end <= JITConfig.INJECTION_THRESHOLD
+        except Exception as e:
+            print(f"Error checking injection timing: {e}")
+            return False
+
+    def inject_next_song(self, track_uri):
+        """
+        Inject the next song into the queue.
+
+        Args:
+            track_uri (str): Spotify track URI to inject
+
+        Returns:
+            bool: True if injection succeeded, False otherwise (no exception raised)
+        """
+        try:
+            self.sp.add_to_queue(track_uri)
+            return True
+        except Exception as e:
+            print(f"Error injecting song {track_uri}: {e}")
             return False
 
     def add_songs_to_queue(self, songs_list):
