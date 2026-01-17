@@ -2,10 +2,9 @@
 LLM Client for OpenRouter API integration.
 Provides queue suggestions based on user input and current queue state.
 """
-import os
 import json
 import requests
-from dotenv import load_dotenv
+from config import LLMConfig
 
 
 class LLMClient:
@@ -16,23 +15,18 @@ class LLMClient:
         Initialize LLM client with OpenRouter API key.
 
         Args:
-            api_key (str, optional): OpenRouter API key. If not provided, loads from environment.
+            api_key (str, optional): OpenRouter API key. If not provided, loads from config.
 
         Raises:
-            ValueError: If API key is not provided and not found in environment.
+            ValueError: If API key is not provided and not found in config.
         """
         if api_key is None:
-            load_dotenv()
-            api_key = os.getenv("OPENROUTER_API_KEY")
-
-        if not api_key:
-            raise ValueError(
-                "Missing OpenRouter API key. Please set OPENROUTER_API_KEY in .env file "
-                "or pass it as an argument."
-            )
+            api_key = LLMConfig.get_api_key()
 
         self.api_key = api_key
-        self.api_endpoint = "https://openrouter.ai/api/v1/chat/completions"
+        self.api_endpoint = LLMConfig.API_ENDPOINT
+        self.model = LLMConfig.get_model()
+        self.timeout = LLMConfig.get_timeout()
 
     def _get_system_prompt(self):
         """
@@ -99,7 +93,7 @@ User Request: {user_message}"""
         }
 
         payload = {
-            "model": "openrouter/auto",  # Use auto-routing to pick the best available model
+            "model": self.model,
             "messages": messages,
             "system": self._get_system_prompt(),
         }
@@ -108,8 +102,14 @@ User Request: {user_message}"""
             self.api_endpoint,
             headers=headers,
             json=payload,
-            timeout=30,
+            timeout=self.timeout,
         )
+
+        if response.status_code != 200:
+            print(f"DEBUG: API Response Status: {response.status_code}")
+            print(f"DEBUG: Response Headers: {response.headers}")
+            print(f"DEBUG: Response Body: {response.text}")
+            print(f"DEBUG: Request Payload: {payload}")
 
         response.raise_for_status()
 
