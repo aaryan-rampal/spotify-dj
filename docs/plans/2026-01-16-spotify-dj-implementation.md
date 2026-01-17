@@ -115,34 +115,109 @@ Commit llm_client.py with message "feat: add openrouter llm client"
 
 ---
 
-### Task 4: Queue Sync Engine
+### Task 4: Queue Sync Engine (PARTIALLY COMPLETE - JIT REQUIRED)
+
+**Status:** Basic implementation done, but blocked by Spotify API limitation.
+
+**Blocker:** Spotify Web API does NOT support removing songs from queue. Only read and add operations available.
+
+**Solution:** See Task 4.5 - Just-in-Time Queue Injection (REQUIRED BEFORE TASK 6)
+
+---
+
+### Task 4.5: Just-in-Time Queue Injection System
+
+**CRITICAL:** This task must be completed and tested before moving to Task 6.
+
+**Overview:** Instead of trying to "clear" the Spotify queue, maintain a "Shadow Queue" in Python. The script monitors playback and injects the next song 10-20 seconds before the current song ends. This solves the API limitation elegantly.
+
+**How it works:**
+1. Python maintains a shadow queue list (from LLM suggestions)
+2. Start playback with first song via `start_playback()`
+3. Run polling loop checking `currently_playing()` every 1-2 seconds
+4. When current song is within 10-20 seconds of ending, inject next song via `add_to_queue()`
+5. If user changes request, update shadow queue immediately
+6. User manual interference (skipping, adding songs) is fine - script only controls injected songs
 
 **Files:**
-- Create: `queue_sync.py`
-- Modify: `spotify_client.py` (add queue modification methods)
+- Modify: `spotify_client.py` (add JIT methods)
+- Rewrite: `queue_sync.py` (JIT-based queue controller)
+- Create: `queue_manager.py` (shadow queue management)
+- Create: `test_jit_queue.py` (comprehensive testing)
+- Modify: `config.py` (add JIT timing config)
 
-**Step 1: Add queue modification methods to SpotifyClient**
+**Step 1: Add JIT configuration to config.py**
 
-Add methods: `clear_queue()`, `add_songs_to_queue(songs_list)` where songs_list is `[{"title": "...", "artist": "..."}]`. The add method should convert title/artist to Spotify IDs using Spotipy's search, then add them to the queue.
+Add a new `JITConfig` class:
+```python
+class JITConfig:
+    INJECTION_THRESHOLD = 15  # Seconds before song ends to inject next
+    POLL_INTERVAL = 1.5       # Seconds between playback checks
+    MIN_QUEUE_SIZE = 1        # Minimum songs in Spotify queue
+```
 
-**Step 2: Write QueueSync class**
+**Step 2: Enhance SpotifyClient with JIT methods**
 
-Create a class that takes a SpotifyClient instance. Include a method `sync_queue(desired_queue)` that:
-- Takes the desired queue from LLM (list of dicts with title/artist)
-- Clears the current Spotify queue
-- Adds songs from desired_queue in order
+Add methods to spotify_client.py:
+- `start_playback(track_uri)` - Start playing specific track
+- `get_playback_status()` - Get progress_ms, duration_ms, is_playing
+- `calculate_time_until_end()` - Returns seconds until current song ends
+- `should_inject_next()` - Returns True if within injection threshold
+- `inject_next_song(track_uri)` - Add song to queue (remove clear_queue dependency)
 
-**Step 3: Implement title/artist to Spotify ID lookup**
+**Step 3: Create QueueManager class**
 
-Use Spotipy's search feature to find tracks by title and artist. Handle cases where exact matches aren't found (log a warning, skip that song).
+Create queue_manager.py:
+```python
+class QueueManager:
+    def __init__(self, songs_list)
+    def update_queue(new_songs_list)  # Update shadow queue on the fly
+    def get_next_song()               # Pop next song
+    def peek_next_song()              # Look at next without removing
+    def is_empty()
+    def queue_length()
+```
 
-**Step 4: Test sync manually**
+**Step 4: Rewrite QueueSync for JIT**
 
-Create a test script that calls sync_queue with a sample desired queue. Verify songs are added to your Spotify queue in the correct order.
+Rewrite queue_sync.py:
+```python
+class JITQueueSync:
+    def start_dj_session(initial_queue)     # Begin with first song
+    def run_injection_loop()                # Main polling/injection loop
+    def update_shadow_queue(new_queue)      # Update queue mid-session
+    def stop_session()                      # Stop loop cleanly
+```
 
-**Step 5: Commit**
+The injection loop:
+- Polls playback status every POLL_INTERVAL seconds
+- Checks if should_inject_next() returns True
+- Gets next song from QueueManager and injects it
+- Continues until shadow queue empty or stopped
+- Handles paused/stopped playback gracefully
 
-Commit queue_sync.py and spotify_client.py changes with message "feat: add queue sync engine"
+**Step 5: Handle edge cases**
+
+- Song ends before injection trigger: Get next and inject immediately
+- Playback paused: Don't inject, wait for resume
+- No playback: Initialize with first song
+- Shadow queue empty: Stop and inform user
+- Network errors: Retry with backoff
+- Multiple queue updates: Process them in order
+
+**Step 6: Test JIT thoroughly**
+
+Create test_jit_queue.py:
+- Set up 10+ song queue
+- Start playback
+- Run injection loop for 30+ seconds
+- Verify injections happen at correct times
+- Update shadow queue mid-playback, verify next injection uses new songs
+- Test edge cases: pause, skip, network simulation
+
+**Step 7: Commit**
+
+Commit with message "feat: implement just-in-time queue injection system"
 
 ---
 
