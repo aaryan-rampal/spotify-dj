@@ -147,7 +147,7 @@ User Request: {user_message}"""
             pass
 
         # Try to extract JSON from markdown code blocks (```json...```)
-        json_match = re.search(r"```(?:json)?\s*\n(.*?)\n```", response_text, re.DOTALL)
+        json_match = re.search(r"```(?:json)?\s*(.*?)\s*```", response_text, re.DOTALL)
         if json_match:
             try:
                 queue_json = json.loads(json_match.group(1))
