@@ -11,6 +11,26 @@ The system has three main components: (1) a CLI loop that reads user input and m
 
 ---
 
+## Implementation Status
+
+**Completed:**
+- Task 1: Project setup (requirements.txt, .env.example, main.py stub)
+- Task 2: Spotify authentication & queue fetching (spotify_client.py with `get_current_queue()`)
+- Task 3: LLM API Client (OpenRouter integration)
+  - Created `llm_client.py` with LLMClient class
+  - Created `config.py` for centralized configuration management
+  - **Current model:** `x-ai/grok-code-fast-1` (configurable in config.py line 16)
+  - Implemented JSON extraction and validation with robust error handling
+  - System prompt refined for strict JSON-only output format
+
+**Remaining:**
+- Task 4: Queue Sync Engine (title/artist → Spotify ID, queue modification)
+- Task 5: Conversation History Management
+- Task 6: CLI Loop & Main Application
+- Task 7: Polish & Edge Cases
+
+---
+
 ### Task 1: Project Setup & Dependencies
 
 **Files:**
