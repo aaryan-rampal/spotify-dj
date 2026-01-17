@@ -13,7 +13,7 @@ class LLMConfig:
     API_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
 
     # Model selection - hardcoded, adjust as needed
-    MODEL = "xiaomi/mimo-v2-flash:free"
+    MODEL = "x-ai/grok-code-fast-1"
 
     # API timeout in seconds
     TIMEOUT = 30
