@@ -653,14 +653,14 @@ Wave 5 (After Task 5):
 ```
 
 ### Final Checklist
-- [ ] `rich` installed and importable
-- [ ] `--debug` flag accepted by main.py
-- [ ] Debug log files created in `logs/` when --debug used
-- [ ] No log files created without --debug
-- [ ] monitor.py displays live updating dashboard
-- [ ] Dashboard shows: now playing, queue, injection status, events, errors
-- [ ] Ctrl+C exits monitor cleanly
-- [ ] All print statements in original code still work (no regression)
+- [x] `rich` installed and importable
+- [x] `--debug` flag accepted by main.py
+- [x] Debug log files created in `logs/` when --debug used
+- [x] No log files created without --debug
+- [x] monitor.py displays live updating dashboard
+- [x] Dashboard shows: now playing, queue, injection status, events, errors
+- [x] Ctrl+C exits monitor cleanly
+- [x] All print statements in original code still work (no regression)
 
 ---
 
