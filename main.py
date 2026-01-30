@@ -2,11 +2,13 @@
 Main CLI loop for Spotify DJ application.
 Integrates SpotifyClient, LLMClient, JITQueueSync, and ConversationHistory.
 """
+
 import sys
 from spotify_client import SpotifyClient
 from llm_client import LLMClient
 from queue_sync import JITQueueSync
 from conversation import ConversationHistory
+import argparse
 
 
 def display_welcome():
@@ -98,7 +100,9 @@ def main():
                 print(f"✓ Current queue has {len(current_queue)} song(s)")
                 if current_queue:
                     print("Currently playing:")
-                    print(f"  {current_queue[0]['title']} by {current_queue[0]['artist']}")
+                    print(
+                        f"  {current_queue[0]['title']} by {current_queue[0]['artist']}"
+                    )
             except Exception as e:
                 print(f"✗ Error fetching queue: {e}")
                 print("Make sure Spotify is playing on your device")
@@ -113,7 +117,7 @@ def main():
                 suggested_queue = llm_client.get_queue_suggestion(
                     conversation_history=conversation_history.get_history(),
                     current_queue=current_queue,
-                    user_message=user_input
+                    user_message=user_input,
                 )
 
                 if not suggested_queue:
@@ -191,4 +195,15 @@ def main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Spotify DJ - Conversational music queue manager"
+    )
+    parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+    args = parser.parse_args()
+
+    if args.debug:
+        import os
+
+        os.makedirs("logs/", exist_ok=True)
+
     main()
