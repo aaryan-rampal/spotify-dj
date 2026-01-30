@@ -135,7 +135,7 @@ Wave 5 (After Task 5):
 
 ## TODOs
 
-- [ ] 1. Add dependencies and infrastructure
+- [x] 1. Add dependencies and infrastructure
 
   **What to do**:
   - Add `rich>=13.0.0` to requirements.txt
@@ -201,7 +201,7 @@ Wave 5 (After Task 5):
 
 ---
 
-- [ ] 2. Create DebugWriter class
+- [x] 2. Create DebugWriter class
 
   **What to do**:
   - Create `debug_writer.py` with DebugWriter class
@@ -298,7 +298,7 @@ Wave 5 (After Task 5):
 
 ---
 
-- [ ] 3. Create DebugEvent data structures
+- [x] 3. Create DebugEvent data structures
 
   **What to do**:
   - Add to `debug_writer.py` (or keep in same file): data structure helpers
@@ -371,7 +371,7 @@ Wave 5 (After Task 5):
 
 ---
 
-- [ ] 4. Integrate DebugWriter into main.py and queue_sync.py
+- [x] 4. Integrate DebugWriter into main.py and queue_sync.py
 
   **What to do**:
   - In `main.py`:
@@ -457,7 +457,7 @@ Wave 5 (After Task 5):
 
 ---
 
-- [ ] 5. Create monitor.py dashboard
+- [x] 5. Create monitor.py dashboard
 
   **What to do**:
   - Create `monitor.py` with rich-based live dashboard
@@ -543,7 +543,7 @@ Wave 5 (After Task 5):
 
 ---
 
-- [ ] 6. End-to-end testing and edge cases
+- [x] 6. End-to-end testing and edge cases
 
   **What to do**:
   - Test full workflow: main.py --debug in one terminal, monitor.py --latest in another
