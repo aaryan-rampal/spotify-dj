@@ -33,6 +33,8 @@ class JITQueueSync:
         self.running = False
         self.injection_thread = None
         self.last_injected_uri = None
+        self.last_played_uri = None  # Track currently playing song to detect when it changes
+        self.already_injected_for_current = False  # Flag to ensure only one injection per song
 
     def start_dj_session(self, initial_queue):
         """
@@ -112,11 +114,22 @@ class JITQueueSync:
                     print("Playback stopped or no active playback")
                     break
 
+                # Detect if the currently playing song has changed
+                current_playback = self.client.sp.current_playback()
+                current_uri = None
+                if current_playback and current_playback.get("item"):
+                    current_uri = current_playback["item"].get("uri")
+
+                # If song has changed, reset injection flag
+                if current_uri and current_uri != self.last_played_uri:
+                    self.last_played_uri = current_uri
+                    self.already_injected_for_current = False
+
                 # Sleep for poll interval
                 time.sleep(JITConfig.POLL_INTERVAL)
 
-                # Check if we should inject next song
-                if self.client.should_inject_next():
+                # Check if we should inject next song (and haven't already for this song)
+                if self.client.should_inject_next() and not self.already_injected_for_current:
                     if self.queue_manager.is_empty():
                         print("Queue exhausted, ending session")
                         break
@@ -134,6 +147,7 @@ class JITQueueSync:
                             print(f"✓ Injected song (remaining: {time_left:.1f}s)")
                             self.queue_manager.get_next_song()  # Pop from queue
                             self.last_injected_uri = next_uri
+                            self.already_injected_for_current = True  # Mark as injected for this song
                             injected = True
                             break
                         else:
