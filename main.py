@@ -9,6 +9,7 @@ from llm_client import LLMClient
 from queue_sync import JITQueueSync
 from conversation import ConversationHistory
 import argparse
+from debug_writer import DebugWriter, create_event
 
 
 def display_welcome():
@@ -82,12 +83,24 @@ def main():
             # Get user input
             user_input = input("You: ").strip()
 
+            if debug_writer:
+                debug_writer.log_event("user_request", {"request": user_input})
+
             if not user_input:
                 print("(Please enter a message or type 'exit' to quit)")
                 continue
 
             # Check if user wants to exit
             if should_exit(user_input):
+                if debug_writer:
+                    debug_writer.log_event(
+                        "session_end",
+                        {
+                            "final_queue_length": jit_sync.queue_manager.queue_length()
+                            if jit_sync and jit_sync.queue_manager
+                            else 0
+                        },
+                    )
                 print("\n" + "=" * 60)
                 print("Thanks for using Spotify DJ! Enjoy the music! 🎵")
                 print("=" * 60)
@@ -127,6 +140,11 @@ def main():
                     continue
 
                 print(f"✓ LLM suggested {len(suggested_queue)} song(s)")
+                if debug_writer:
+                    debug_writer.log_event(
+                        "llm_suggestion",
+                        {"song_count": len(suggested_queue), "songs": suggested_queue},
+                    )
             except ValueError as e:
                 print(f"✗ Error parsing LLM response: {e}")
                 # Remove the user message from history since we're retrying
@@ -149,7 +167,7 @@ def main():
                 if not jit_started:
                     # First time - start DJ session
                     print("Starting DJ session...")
-                    jit_sync = JITQueueSync(spotify_client)
+                    jit_sync = JITQueueSync(spotify_client, debug_writer)
 
                     if not jit_sync.start_dj_session(suggested_queue):
                         print("✗ Failed to start DJ session")
@@ -162,6 +180,16 @@ def main():
                     jit_sync.start_injection_thread()
                     jit_started = True
                     print("✓ DJ session started, injection loop running in background")
+                    if debug_writer:
+                        debug_writer.log_event(
+                            "session_start",
+                            {
+                                "queue_length": len(suggested_queue),
+                                "first_song": suggested_queue[0]
+                                if suggested_queue
+                                else None,
+                            },
+                        )
                 else:
                     # Update existing session
                     if not jit_sync.update_shadow_queue(suggested_queue):
@@ -205,5 +233,11 @@ if __name__ == "__main__":
         import os
 
         os.makedirs("logs/", exist_ok=True)
+        debug_writer = DebugWriter(enabled=True)
+    else:
+        debug_writer = None
 
     main()
+
+    if debug_writer:
+        debug_writer.close()

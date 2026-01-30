@@ -2,11 +2,13 @@
 Just-In-Time (JIT) queue synchronization engine.
 Maintains a shadow queue and injects songs at the right moment.
 """
+
 import time
 import threading
 from spotify_client import SpotifyClient
 from queue_manager import QueueManager
 from config import JITConfig
+from debug_writer import create_cycle_snapshot, create_event
 
 
 class JITQueueSync:
@@ -20,21 +22,27 @@ class JITQueueSync:
     4. Allows mid-session queue updates
     """
 
-    def __init__(self, spotify_client=None):
+    def __init__(self, spotify_client=None, debug_writer=None):
         """
         Initialize JIT queue sync engine.
 
         Args:
             spotify_client (SpotifyClient, optional): Existing SpotifyClient instance.
                                                       If None, a new one will be created.
+            debug_writer (DebugWriter, optional): Debug logger instance for logging events.
         """
         self.client = spotify_client or SpotifyClient()
         self.queue_manager = None
         self.running = False
         self.injection_thread = None
         self.last_injected_uri = None
-        self.last_played_uri = None  # Track currently playing song to detect when it changes
-        self.already_injected_for_current = False  # Flag to ensure only one injection per song
+        self.last_played_uri = (
+            None  # Track currently playing song to detect when it changes
+        )
+        self.already_injected_for_current = (
+            False  # Flag to ensure only one injection per song
+        )
+        self.debug_writer = debug_writer
 
     def start_dj_session(self, initial_queue):
         """
@@ -71,7 +79,9 @@ class JITQueueSync:
             return False
 
         self.last_injected_uri = first_uri
-        print(f"✓ Playback started, {self.queue_manager.queue_length()} songs queued for injection")
+        print(
+            f"✓ Playback started, {self.queue_manager.queue_length()} songs queued for injection"
+        )
         return True
 
     def run_injection_loop(self, max_duration_seconds=None):
@@ -96,10 +106,13 @@ class JITQueueSync:
         self.running = True
         start_time = time.time()
 
-        print(f"Starting injection loop with threshold={JITConfig.INJECTION_THRESHOLD}s, "
-              f"poll_interval={JITConfig.POLL_INTERVAL}s")
+        print(
+            f"Starting injection loop with threshold={JITConfig.INJECTION_THRESHOLD}s, "
+            f"poll_interval={JITConfig.POLL_INTERVAL}s"
+        )
 
         try:
+            cycle_num = 0
             while self.running:
                 # Check timeout
                 if max_duration_seconds is not None:
@@ -122,14 +135,71 @@ class JITQueueSync:
 
                 # If song has changed, reset injection flag
                 if current_uri and current_uri != self.last_played_uri:
+                    if self.debug_writer:
+                        self.debug_writer.log_event(
+                            "song_change",
+                            {"uri": current_uri, "from_uri": self.last_played_uri},
+                        )
                     self.last_played_uri = current_uri
                     self.already_injected_for_current = False
 
                 # Sleep for poll interval
                 time.sleep(JITConfig.POLL_INTERVAL)
 
+                # Log cycle snapshot
+                if self.debug_writer:
+                    playing = {}
+                    status = self.client.get_playback_status()
+                    if status and status.get("is_playing"):
+                        track = status.get("item")
+                        if track:
+                            playing = {
+                                "title": track.get("name", ""),
+                                "artist": track["artists"][0].get("name", "")
+                                if track.get("artists")
+                                else "",
+                                "uri": track.get("uri", ""),
+                                "progress_ms": status.get("progress_ms", 0),
+                                "duration_ms": track.get("duration_ms", 0),
+                                "device": status.get("device", "") or "",
+                            }
+
+                    shadow_queue = {
+                        "remaining": self.queue_manager.queue_length()
+                        if self.queue_manager
+                        else 0,
+                        "next_song": None,
+                        "injected_count": 0,
+                    }
+                    if self.queue_manager and not self.queue_manager.is_empty():
+                        next_song_data = self.queue_manager.peek_next_song()
+                        if next_song_data:
+                            shadow_queue["next_song"] = (
+                                f"{next_song_data[0]} by {next_song_data[1]}"
+                            )
+
+                    injection_state = {
+                        "should_inject": self.client.should_inject_next(),
+                        "time_until_end": self.client.calculate_time_until_end(),
+                        "already_injected": self.already_injected_for_current,
+                        "last_injected_uri": self.last_injected_uri,
+                    }
+
+                    cycle_snapshot = create_cycle_snapshot(
+                        cycle_num=cycle_num,
+                        playing=playing,
+                        shadow_queue=shadow_queue,
+                        injection_state=injection_state,
+                    )
+                    self.debug_writer.log_cycle(cycle_snapshot)
+
+                    cycle_num += 1
+
                 # Check if we should inject next song (and haven't already for this song)
-                if self.client.should_inject_next() and not self.already_injected_for_current:
+                if (
+                    self.client.should_inject_next()
+                    and not self.already_injected_for_current
+                ):
                     if self.queue_manager.is_empty():
                         print("Queue exhausted, ending session")
                         break
@@ -145,24 +215,42 @@ class JITQueueSync:
                         time_left = self.client.calculate_time_until_end()
                         if self.client.inject_next_song(next_uri):
                             print(f"✓ Injected song (remaining: {time_left:.1f}s)")
+                            if self.debug_writer:
+                                self.debug_writer.log_event(
+                                    "injection",
+                                    {"uri": next_uri, "time_left": time_left},
+                                )
                             self.queue_manager.get_next_song()  # Pop from queue
                             self.last_injected_uri = next_uri
-                            self.already_injected_for_current = True  # Mark as injected for this song
+                            self.already_injected_for_current = (
+                                True  # Mark as injected for this song
+                            )
                             injected = True
                             break
                         else:
                             if attempt < JITConfig.RETRY_ATTEMPTS - 1:
-                                print(f"  Retry {attempt + 1}/{JITConfig.RETRY_ATTEMPTS}...")
+                                print(
+                                    f"  Retry {attempt + 1}/{JITConfig.RETRY_ATTEMPTS}..."
+                                )
                                 time.sleep(JITConfig.RETRY_DELAY)
 
                     if not injected:
-                        print(f"✗ Failed to inject song after {JITConfig.RETRY_ATTEMPTS} attempts")
+                        print(
+                            f"✗ Failed to inject song after {JITConfig.RETRY_ATTEMPTS} attempts"
+                        )
+                        if self.debug_writer:
+                            self.debug_writer.log_event(
+                                "injection_failed",
+                                {"uri": next_uri, "attempts": JITConfig.RETRY_ATTEMPTS},
+                            )
                         # Continue anyway, will try again
 
         except KeyboardInterrupt:
             print("\nSession interrupted by user")
         except Exception as e:
             print(f"Error in injection loop: {e}")
+            if self.debug_writer:
+                self.debug_writer.log_error(e)
         finally:
             self.running = False
             print("Injection loop ended")
@@ -183,7 +271,13 @@ class JITQueueSync:
 
         print(f"Updating shadow queue with {len(new_songs_list)} new songs...")
         self.queue_manager.update_queue(new_songs_list)
-        print(f"✓ Shadow queue updated, {self.queue_manager.queue_length()} songs queued")
+        if self.debug_writer:
+            self.debug_writer.log_event(
+                "queue_update", {"new_count": len(new_songs_list)}
+            )
+        print(
+            f"✓ Shadow queue updated, {self.queue_manager.queue_length()} songs queued"
+        )
         return True
 
     def stop_session(self):
@@ -204,9 +298,7 @@ class JITQueueSync:
             threading.Thread: The injection thread
         """
         self.injection_thread = threading.Thread(
-            target=self.run_injection_loop,
-            args=(max_duration_seconds,),
-            daemon=False
+            target=self.run_injection_loop, args=(max_duration_seconds,), daemon=False
         )
         self.injection_thread.start()
         return self.injection_thread
@@ -252,7 +344,7 @@ class QueueSync:
             "cleared": False,
             "added": 0,
             "failed": 0,
-            "total": len(desired_queue)
+            "total": len(desired_queue),
         }
 
         if not desired_queue:
