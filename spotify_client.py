@@ -50,7 +50,7 @@ class SpotifyClient:
 
         # Get currently playing track
         current = self.sp.currently_playing()
-        if current and current.get("item"):
+        if current and current.get("is_playing") and current.get("item"):
             track = current["item"]
             queue_items.append({
                 "title": track["name"],
@@ -59,6 +59,8 @@ class SpotifyClient:
 
         # Get the queue
         queue = self.sp.queue()
+        # TODO: if queue is full at start, we should tell user that we are going to empty it
+        # meaning we should add a bool to this function
         if queue and queue.get("queue"):
             for track in queue["queue"]:
                 queue_items.append({

@@ -39,13 +39,10 @@ def format_queue_for_display(queue):
         return "Queue is empty"
 
     lines = []
-    for i, song in enumerate(queue[:5], 1):  # Show first 5 songs
+    for i, song in enumerate(queue):  # Show first 5 songs
         title = song.get("title", "Unknown")
         artist = song.get("artist", "Unknown Artist")
         lines.append(f"  {i}. {title} by {artist}")
-
-    if len(queue) > 5:
-        lines.append(f"  ... and {len(queue) - 5} more songs")
 
     return "\n".join(lines)
 
@@ -80,6 +77,7 @@ def main():
     # Main loop
     while True:
         try:
+            # TODO: add some basic functions like pause, skip
             # Get user input
             user_input = input("You: ").strip()
 
@@ -109,6 +107,8 @@ def main():
             # Fetch current queue from Spotify
             print("\nFetching current queue from Spotify...")
             try:
+                # TODO: we have JIT queue, this queue will usually be empty or only have 1 song
+                # TODO: this for some reason repeats the currently playing song?
                 current_queue = spotify_client.get_current_queue()
                 print(f"✓ Current queue has {len(current_queue)} song(s)")
                 if current_queue:

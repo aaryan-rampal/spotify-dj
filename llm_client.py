@@ -135,6 +135,8 @@ User Request: {user_message}"""
                 f"OpenRouter returned non-JSON response (status={response.status_code}): {snippet}"
             ) from e
 
+        # TODO: Validate response schema more robustly
+        # TODO: add LLM reasoning to debug logs
         try:
             assistant_message = response_data["choices"][0]["message"]["content"]
         except Exception as e:
