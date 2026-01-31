@@ -9,7 +9,7 @@ from llm_client import LLMClient
 from queue_sync import JITQueueSync
 from conversation import ConversationHistory
 import argparse
-from debug_writer import DebugWriter, create_event
+from debug_writer import DebugWriter
 
 
 def display_welcome():
@@ -192,6 +192,8 @@ def main():
                         )
                 else:
                     # Update existing session
+                    if jit_sync is None:
+                        raise RuntimeError("JIT queue sync not initialized")
                     if not jit_sync.update_shadow_queue(suggested_queue):
                         print("✗ Failed to update queue")
                         # Remove messages from history

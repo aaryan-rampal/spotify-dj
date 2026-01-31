@@ -2,6 +2,7 @@
 LLM Client for OpenRouter API integration.
 Provides queue suggestions based on user input and current queue state.
 """
+
 import json
 import requests
 from config import LLMConfig
@@ -42,8 +43,12 @@ When a user sends a message, you will:
 2. Receive their request (mood, genre, specific songs, etc.)
 3. Suggest a new queue that fulfills their request
 
-IMPORTANT: You must ALWAYS respond with valid JSON in exactly this format:
-{"queue": [{"title": "Song Name", "artist": "Artist Name"}, {"title": "Another Song", "artist": "Another Artist"}]}
+IMPORTANT:
+- You must ALWAYS respond with valid JSON in exactly this format:
+  {"queue": [{"title": "Song Name", "artist": "Artist Name"}, {"title": "Another Song", "artist": "Another Artist"}]}
+- Your entire response must be a single JSON object. No markdown. No code fences. No extra keys.
+- Do not ask clarifying questions. If the request is ambiguous, make a reasonable best-guess.
+- If you cannot comply, return an empty queue: {"queue": []}
 
 The queue should be an array of songs with "title" and "artist" fields. You can:
 - Keep some existing songs if they fit the request
@@ -74,6 +79,11 @@ Be creative and suggest songs that match the user's mood or preference. Always r
         """
         # Build the messages for the API call
         messages = []
+        system_message = {"role": "system", "content": self._get_system_prompt()}
+
+        # Prepend a system message unless the caller already provided one.
+        if not conversation_history or conversation_history[0].get("role") != "system":
+            messages.append(system_message)
 
         # Add conversation history
         messages.extend(conversation_history)
@@ -95,7 +105,9 @@ User Request: {user_message}"""
         payload = {
             "model": self.model,
             "messages": messages,
-            "system": self._get_system_prompt(),
+            # OpenRouter JSON mode: guarantees the assistant message is valid JSON.
+            # Docs: https://openrouter.ai/docs/api/reference/parameters
+            "response_format": {"type": "json_object"},
         }
 
         response = requests.post(
@@ -114,8 +126,21 @@ User Request: {user_message}"""
         response.raise_for_status()
 
         # Parse the response
-        response_data = response.json()
-        assistant_message = response_data["choices"][0]["message"]["content"]
+        try:
+            response_data = response.json()
+        except ValueError as e:
+            body = response.text
+            snippet = body if len(body) <= 2000 else body[:2000] + "..."
+            raise ValueError(
+                f"OpenRouter returned non-JSON response (status={response.status_code}): {snippet}"
+            ) from e
+
+        try:
+            assistant_message = response_data["choices"][0]["message"]["content"]
+        except Exception as e:
+            raise ValueError(
+                f"Unexpected OpenRouter response schema; expected choices[0].message.content. Got keys: {list(response_data.keys())}"
+            ) from e
 
         # Extract JSON from the response
         queue_json = self._extract_json_from_response(assistant_message)
@@ -139,12 +164,14 @@ User Request: {user_message}"""
 
         # Try to parse the entire response as JSON first
         try:
-            queue_json = json.loads(response_text)
-            queue_json = self._normalize_queue_response(queue_json)
+            parsed = json.loads(response_text)
+        except json.JSONDecodeError:
+            parsed = None
+
+        if parsed is not None:
+            queue_json = self._normalize_queue_response(parsed)
             self._validate_queue_structure(queue_json)
             return queue_json
-        except (json.JSONDecodeError, ValueError):
-            pass
 
         # Try to extract JSON from markdown code blocks (```json...```)
         json_match = re.search(r"```(?:json)?\s*(.*?)\s*```", response_text, re.DOTALL)
@@ -157,16 +184,19 @@ User Request: {user_message}"""
             except (json.JSONDecodeError, ValueError):
                 pass
 
-        # Try to find raw JSON object or array in the response
-        json_match = re.search(r"(\{.*\}|\[.*\])", response_text, re.DOTALL)
-        if json_match:
+        # Try to locate the first valid JSON object/array substring.
+        decoder = json.JSONDecoder()
+        for i, ch in enumerate(response_text):
+            if ch not in "{[":
+                continue
             try:
-                queue_json = json.loads(json_match.group(1))
-                queue_json = self._normalize_queue_response(queue_json)
-                self._validate_queue_structure(queue_json)
-                return queue_json
-            except (json.JSONDecodeError, ValueError):
-                pass
+                parsed, _ = decoder.raw_decode(response_text[i:])
+            except json.JSONDecodeError:
+                continue
+
+            queue_json = self._normalize_queue_response(parsed)
+            self._validate_queue_structure(queue_json)
+            return queue_json
 
         raise ValueError(
             f"Could not extract valid JSON from LLM response: {response_text}"
@@ -187,12 +217,13 @@ User Request: {user_message}"""
         if isinstance(data, list):
             # If it's already a list of songs, wrap it in the queue format
             return {"queue": data}
-        elif isinstance(data, dict) and "queue" in data:
+        if isinstance(data, dict) and "queue" in data:
             # Already in the expected format
             return data
-        else:
-            # Unexpected format
-            return {"queue": []}
+
+        raise ValueError(
+            f"Unexpected JSON format; expected {{'queue': [...]}}. Got: {type(data)}"
+        )
 
     def _validate_queue_structure(self, queue_json):
         """
@@ -205,9 +236,7 @@ User Request: {user_message}"""
             ValueError: If the structure is invalid.
         """
         if not isinstance(queue_json, dict) or "queue" not in queue_json:
-            raise ValueError(
-                f"Response JSON missing 'queue' field. Got: {queue_json}"
-            )
+            raise ValueError(f"Response JSON missing 'queue' field. Got: {queue_json}")
 
         if not isinstance(queue_json["queue"], list):
             raise ValueError(
@@ -217,10 +246,6 @@ User Request: {user_message}"""
         # Validate each queue item
         for item in queue_json["queue"]:
             if not isinstance(item, dict):
-                raise ValueError(
-                    f"Queue items must be dicts. Got: {type(item)}"
-                )
+                raise ValueError(f"Queue items must be dicts. Got: {type(item)}")
             if "title" not in item or "artist" not in item:
-                raise ValueError(
-                    f"Queue item missing 'title' or 'artist': {item}"
-                )
+                raise ValueError(f"Queue item missing 'title' or 'artist': {item}")
