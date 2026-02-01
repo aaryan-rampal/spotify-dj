@@ -8,7 +8,7 @@ import threading
 from spotify_client import SpotifyClient
 from queue_manager import QueueManager
 from config import JITConfig
-from debug_writer import create_cycle_snapshot, create_event
+from debug_writer import create_cycle_snapshot
 
 
 class JITQueueSync:
@@ -73,7 +73,7 @@ class JITQueueSync:
             print("Error: Could not get first track URI")
             return False
 
-        print(f"Starting playback with first song...")
+        print("Starting playback with first song...")
         if not self.client.start_playback(first_uri):
             print("Error: Failed to start playback")
             return False

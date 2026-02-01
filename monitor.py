@@ -87,12 +87,12 @@ def generate_now_playing_panel(state):
     bar = "━" * filled + "─" * (width - filled)
 
     content = Text()
-    content.append(f"Title: ", style="bold cyan")
+    content.append("Title: ", style="bold cyan")
     content.append(f"{state.track_title}\n")
-    content.append(f"Artist: ", style="bold cyan")
+    content.append("Artist: ", style="bold cyan")
     content.append(f"{state.track_artist}\n")
     content.append(f"{bar} {int(progress_percent)}%\n", style="green")
-    content.append(f"Time until injection: ", style="bold yellow")
+    content.append("Time until injection: ", style="bold yellow")
     content.append(f"{state.time_until_injection}s", style="yellow")
 
     return Panel(content, title="NOW PLAYING", border_style="blue")
@@ -100,7 +100,7 @@ def generate_now_playing_panel(state):
 
 def generate_shadow_queue_panel(state):
     content = Text()
-    content.append(f"Remaining: ", style="bold")
+    content.append("Remaining: ", style="bold")
     content.append(f"{state.queue_remaining} songs\n\n", style="white")
 
     content.append("Next Up:\n", style="bold underline")

@@ -2,7 +2,7 @@
 Comprehensive test suite for Just-In-Time (JIT) queue injection system.
 Tests basic injection, mid-session updates, and edge cases.
 """
-import time
+
 from spotify_client import SpotifyClient
 from queue_manager import QueueManager
 from queue_sync import JITQueueSync
@@ -11,9 +11,9 @@ from config import JITConfig
 
 def test_queue_manager_basic():
     """Test basic QueueManager functionality: initialization, peek, get."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: QueueManager Basic Functionality")
-    print("="*70)
+    print("=" * 70)
 
     test_songs = [
         {"title": "Bohemian Rhapsody", "artist": "Queen"},
@@ -56,9 +56,9 @@ def test_queue_manager_basic():
 
 def test_spotify_client_search():
     """Test Spotify client song search functionality."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: SpotifyClient Song Search")
-    print("="*70)
+    print("=" * 70)
 
     try:
         client = SpotifyClient()
@@ -91,9 +91,9 @@ def test_spotify_client_search():
 
 def test_spotify_playback_status():
     """Test getting playback status from Spotify."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: SpotifyClient Playback Status")
-    print("="*70)
+    print("=" * 70)
 
     try:
         client = SpotifyClient()
@@ -110,7 +110,7 @@ def test_spotify_playback_status():
         print(f"  Duration: {status.get('duration_ms')}ms")
         print(f"  Device: {status.get('device')}")
 
-        if status.get('is_playing'):
+        if status.get("is_playing"):
             time_left = client.calculate_time_until_end()
             print(f"  Time until end: {time_left:.1f}s")
             print("\n✓ Playback status test passed (playback active)")
@@ -131,9 +131,9 @@ def test_jit_injection_simulation():
     Simulate JIT injection system (without requiring active Spotify playback).
     Tests the queue manager and injection loop logic.
     """
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: JIT Injection Loop Simulation")
-    print("="*70)
+    print("=" * 70)
 
     test_songs = [
         {"title": "Bohemian Rhapsody", "artist": "Queen"},
@@ -153,7 +153,9 @@ def test_jit_injection_simulation():
         # Create queue manager to test song lookup
         manager = QueueManager(test_songs, client)
         found_songs = manager.queue_length()
-        print(f"\n✓ Successfully looked up {found_songs} out of {len(test_songs)} songs")
+        print(
+            f"\n✓ Successfully looked up {found_songs} out of {len(test_songs)} songs"
+        )
 
         if manager.is_empty():
             print("✗ All songs failed lookup")
@@ -170,7 +172,9 @@ def test_jit_injection_simulation():
                 manager.get_next_song()  # Consume
                 injection_count += 1
 
-        print(f"\n✓ Injected {injection_count} songs (remaining: {manager.queue_length()})")
+        print(
+            f"\n✓ Injected {injection_count} songs (remaining: {manager.queue_length()})"
+        )
         print("\n✓ JIT injection simulation passed")
         return True
 
@@ -184,9 +188,9 @@ def test_queue_update_mid_session():
     Test updating the shadow queue mid-session.
     Simulates user changing mood/genre while playback is ongoing.
     """
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Mid-Session Queue Update")
-    print("="*70)
+    print("=" * 70)
 
     initial_songs = [
         {"title": "Bohemian Rhapsody", "artist": "Queen"},
@@ -229,9 +233,9 @@ def test_queue_update_mid_session():
 
 def test_edge_cases():
     """Test edge cases: empty queue, invalid songs, etc."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Edge Cases")
-    print("="*70)
+    print("=" * 70)
 
     try:
         client = SpotifyClient()
@@ -281,9 +285,9 @@ def test_edge_cases():
 
 def print_test_summary(results):
     """Print summary of all test results."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST SUMMARY")
-    print("="*70)
+    print("=" * 70)
 
     tests = [
         ("QueueManager Basic Functionality", results.get("queue_manager_basic", False)),
@@ -302,17 +306,17 @@ def print_test_summary(results):
         print(f"{status}: {test_name}")
 
     print(f"\nTotal: {passed}/{total} tests passed")
-    print("="*70)
+    print("=" * 70)
 
     return passed == total
 
 
 def run_all_tests():
     """Run all JIT system tests."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("SPOTIFY DJ - JIT QUEUE INJECTION SYSTEM - TEST SUITE")
-    print("="*70)
-    print(f"\nConfiguration:")
+    print("=" * 70)
+    print("\nConfiguration:")
     print(f"  Injection threshold: {JITConfig.INJECTION_THRESHOLD}s")
     print(f"  Poll interval: {JITConfig.POLL_INTERVAL}s")
     print(f"  Retry attempts: {JITConfig.RETRY_ATTEMPTS}")

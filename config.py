@@ -2,6 +2,7 @@
 Configuration management for Spotify DJ application.
 Handles API settings and model configurations.
 """
+
 import os
 from dotenv import load_dotenv
 

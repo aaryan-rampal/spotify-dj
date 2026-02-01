@@ -1,8 +1,8 @@
 """
 Spotify client for queue management and playback control.
 """
+
 import os
-import time
 from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
@@ -52,10 +52,14 @@ class SpotifyClient:
         current = self.sp.currently_playing()
         if current and current.get("is_playing") and current.get("item"):
             track = current["item"]
-            queue_items.append({
-                "title": track["name"],
-                "artist": track["artists"][0]["name"] if track.get("artists") else "Unknown Artist"
-            })
+            queue_items.append(
+                {
+                    "title": track["name"],
+                    "artist": track["artists"][0]["name"]
+                    if track.get("artists")
+                    else "Unknown Artist",
+                }
+            )
 
         # Get the queue
         queue = self.sp.queue()
@@ -63,10 +67,14 @@ class SpotifyClient:
         # meaning we should add a bool to this function
         if queue and queue.get("queue"):
             for track in queue["queue"]:
-                queue_items.append({
-                    "title": track["name"],
-                    "artist": track["artists"][0]["name"] if track.get("artists") else "Unknown Artist"
-                })
+                queue_items.append(
+                    {
+                        "title": track["name"],
+                        "artist": track["artists"][0]["name"]
+                        if track.get("artists")
+                        else "Unknown Artist",
+                    }
+                )
 
         return queue_items
 
@@ -154,16 +162,26 @@ class SpotifyClient:
         try:
             playback = self.sp.current_playback()
             if not playback:
-                return {"is_playing": False, "progress_ms": 0, "duration_ms": 0, "device": None}
+                return {
+                    "is_playing": False,
+                    "progress_ms": 0,
+                    "duration_ms": 0,
+                    "device": None,
+                }
 
             if not playback.get("item"):
-                return {"is_playing": False, "progress_ms": 0, "duration_ms": 0, "device": None}
+                return {
+                    "is_playing": False,
+                    "progress_ms": 0,
+                    "duration_ms": 0,
+                    "device": None,
+                }
 
             return {
                 "is_playing": playback.get("is_playing", False),
                 "progress_ms": playback.get("progress_ms", 0),
                 "duration_ms": playback["item"].get("duration_ms", 0),
-                "device": playback.get("device", {}).get("name", "Unknown")
+                "device": playback.get("device", {}).get("name", "Unknown"),
             }
         except Exception as e:
             print(f"Error getting playback status: {e}")

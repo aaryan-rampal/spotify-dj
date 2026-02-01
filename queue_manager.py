@@ -3,6 +3,7 @@ Queue manager for shadow queue tracking and song injection.
 Maintains the "shadow queue" in Python and provides next song for injection.
 Thread-safe implementation using locks to prevent race conditions.
 """
+
 import threading
 from spotify_client import SpotifyClient
 
@@ -40,11 +41,9 @@ class QueueManager:
             track_uri = self.client.search_track(title, artist)
 
             if track_uri:
-                self.songs_with_uris.append({
-                    "title": title,
-                    "artist": artist,
-                    "uri": track_uri
-                })
+                self.songs_with_uris.append(
+                    {"title": title, "artist": artist, "uri": track_uri}
+                )
             else:
                 print(f"Warning: Could not find '{title}' by '{artist}' on Spotify")
 
@@ -66,17 +65,17 @@ class QueueManager:
                 artist = song.get("artist")
 
                 if not title or not artist:
-                    print(f"Warning: Skipping song with missing title or artist: {song}")
+                    print(
+                        f"Warning: Skipping song with missing title or artist: {song}"
+                    )
                     continue
 
                 track_uri = self.client.search_track(title, artist)
 
                 if track_uri:
-                    self.songs_with_uris.append({
-                        "title": title,
-                        "artist": artist,
-                        "uri": track_uri
-                    })
+                    self.songs_with_uris.append(
+                        {"title": title, "artist": artist, "uri": track_uri}
+                    )
                 else:
                     print(f"Warning: Could not find '{title}' by '{artist}' on Spotify")
 

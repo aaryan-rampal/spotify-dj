@@ -2,6 +2,7 @@
 Test script for ConversationHistory class.
 Verifies that conversation management works correctly.
 """
+
 from conversation import ConversationHistory
 
 
@@ -22,9 +23,13 @@ def test_conversation_history():
     history = conv.get_history()
     assert len(history) == 2, "Should have 2 messages"
     assert history[0]["role"] == "user", "First message should be user role"
-    assert history[0]["content"] == "I want upbeat jazz", "First message content mismatch"
+    assert history[0]["content"] == "I want upbeat jazz", (
+        "First message content mismatch"
+    )
     assert history[1]["role"] == "user", "Second message should be user role"
-    assert history[1]["content"] == "More energetic please", "Second message content mismatch"
+    assert history[1]["content"] == "More energetic please", (
+        "Second message content mismatch"
+    )
     print("✓ User messages added correctly\n")
 
     # Test 3: Add assistant responses
@@ -51,7 +56,9 @@ def test_conversation_history():
     history = conv.get_history()
     for i, (expected_role, expected_content) in enumerate(expected_order):
         assert history[i]["role"] == expected_role, f"Message {i} role mismatch"
-        assert history[i]["content"] == expected_content, f"Message {i} content mismatch"
+        assert history[i]["content"] == expected_content, (
+            f"Message {i} content mismatch"
+        )
     print("✓ Messages are in correct chronological order\n")
 
     # Test 5: Test clear()
@@ -73,7 +80,9 @@ def test_conversation_history():
     print("Test 7: Verify format matches LLM API expectation")
     conv.clear()
     conv.add_user_message("I like classical music")
-    conv.add_assistant_response('{"queue": [{"title": "Symphony No. 5", "artist": "Beethoven"}]}')
+    conv.add_assistant_response(
+        '{"queue": [{"title": "Symphony No. 5", "artist": "Beethoven"}]}'
+    )
     history = conv.get_history()
 
     # Check that format is exactly what LLM API expects
@@ -81,7 +90,9 @@ def test_conversation_history():
         assert isinstance(msg, dict), "Each message should be a dict"
         assert "role" in msg, "Each message must have 'role' field"
         assert "content" in msg, "Each message must have 'content' field"
-        assert msg["role"] in ["user", "assistant"], "Role must be 'user' or 'assistant'"
+        assert msg["role"] in ["user", "assistant"], (
+            "Role must be 'user' or 'assistant'"
+        )
         assert isinstance(msg["content"], str), "Content must be a string"
 
     print("✓ Format matches LLM API expectations\n")

@@ -1,6 +1,7 @@
 """
 Test script for QueueSync - verifies queue synchronization works correctly.
 """
+
 from spotify_client import SpotifyClient
 from queue_sync import QueueSync
 
@@ -25,7 +26,7 @@ def test_queue_sync():
     if current_queue:
         print(f"Current queue has {len(current_queue)} track(s):")
         for i, track in enumerate(current_queue, 1):
-            status = "(Now Playing)" if i == 1 else f"(Position {i-1})"
+            status = "(Now Playing)" if i == 1 else f"(Position {i - 1})"
             print(f"  {i}. '{track['title']}' by {track['artist']} {status}")
     else:
         print("No tracks currently playing or in queue.")
@@ -36,7 +37,10 @@ def test_queue_sync():
         {"title": "As It Was", "artist": "Harry Styles"},
         {"title": "Heat Waves", "artist": "Glass Animals"},
         {"title": "Levitating", "artist": "Dua Lipa"},
-        {"title": "NonExistentSongXYZ", "artist": "FakeArtistABC"},  # Test error handling
+        {
+            "title": "NonExistentSongXYZ",
+            "artist": "FakeArtistABC",
+        },  # Test error handling
     ]
 
     print("\n--- Desired Queue ---")
@@ -55,7 +59,7 @@ def test_queue_sync():
     if updated_queue:
         print(f"Updated queue has {len(updated_queue)} track(s):")
         for i, track in enumerate(updated_queue, 1):
-            status = "(Now Playing)" if i == 1 else f"(Position {i-1})"
+            status = "(Now Playing)" if i == 1 else f"(Position {i - 1})"
             print(f"  {i}. '{track['title']}' by {track['artist']} {status}")
     else:
         print("Queue is empty.")

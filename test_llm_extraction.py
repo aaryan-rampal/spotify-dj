@@ -1,6 +1,7 @@
 """
 Test JSON extraction from various LLM response formats.
 """
+
 from llm_client import LLMClient
 
 
@@ -10,9 +11,18 @@ def test_json_extraction():
 
     test_cases = [
         ("Raw JSON array", '[{"title": "Song 1", "artist": "Artist 1"}]'),
-        ("JSON object with queue key", '{"queue": [{"title": "Song 1", "artist": "Artist 1"}]}'),
-        ("JSON in markdown code block", '```json\n[{"title": "Song 1", "artist": "Artist 1"}]\n```'),
-        ("JSON with descriptive text", 'Here is the queue:\n\n```json\n[{"title": "Song 1", "artist": "Artist 1"}]\n```\n\nEnjoy!'),
+        (
+            "JSON object with queue key",
+            '{"queue": [{"title": "Song 1", "artist": "Artist 1"}]}',
+        ),
+        (
+            "JSON in markdown code block",
+            '```json\n[{"title": "Song 1", "artist": "Artist 1"}]\n```',
+        ),
+        (
+            "JSON with descriptive text",
+            'Here is the queue:\n\n```json\n[{"title": "Song 1", "artist": "Artist 1"}]\n```\n\nEnjoy!',
+        ),
     ]
 
     all_passed = True
