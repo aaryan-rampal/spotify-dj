@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "spotify-dj"
+version = "0.1.0"
+description = "Conversational CLI that uses an LLM to turn natural-language music requests into a Spotify queue"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "spotipy",
+    "python-dotenv",
+    "requests",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "black",
+    "ruff",
+    "mypy",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/spotify_dj"]

@@ -5,10 +5,10 @@ Maintains a shadow queue and injects songs at the right moment.
 
 import time
 import threading
-from spotify_client import SpotifyClient
-from queue_manager import QueueManager
-from config import JITConfig
-from debug_writer import create_cycle_snapshot
+from .spotify_client import SpotifyClient
+from .queue_manager import QueueManager
+from .config import JITConfig
+from .debug_writer import create_cycle_snapshot
 
 
 class JITQueueSync:

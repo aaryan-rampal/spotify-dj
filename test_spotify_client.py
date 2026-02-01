@@ -2,7 +2,7 @@
 Test script for SpotifyClient - verifies queue fetching works correctly.
 """
 
-from spotify_client import SpotifyClient
+from spotify_dj.spotify_client import SpotifyClient
 
 
 def test_get_current_queue():

@@ -3,10 +3,10 @@ Comprehensive test suite for Just-In-Time (JIT) queue injection system.
 Tests basic injection, mid-session updates, and edge cases.
 """
 
-from spotify_client import SpotifyClient
-from queue_manager import QueueManager
-from queue_sync import JITQueueSync
-from config import JITConfig
+from spotify_dj.spotify_client import SpotifyClient
+from spotify_dj.queue_manager import QueueManager
+from spotify_dj.queue_sync import JITQueueSync
+from spotify_dj.config import JITConfig
 
 
 def test_queue_manager_basic():

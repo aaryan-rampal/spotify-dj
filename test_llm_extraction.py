@@ -2,7 +2,7 @@
 Test JSON extraction from various LLM response formats.
 """
 
-from llm_client import LLMClient
+from spotify_dj.llm_client import LLMClient
 
 
 def test_json_extraction():

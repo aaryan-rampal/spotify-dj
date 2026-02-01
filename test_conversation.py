@@ -3,7 +3,7 @@ Test script for ConversationHistory class.
 Verifies that conversation management works correctly.
 """
 
-from conversation import ConversationHistory
+from spotify_dj.conversation import ConversationHistory
 
 
 def test_conversation_history():

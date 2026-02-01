@@ -5,7 +5,7 @@ Thread-safe implementation using locks to prevent race conditions.
 """
 
 import threading
-from spotify_client import SpotifyClient
+from .spotify_client import SpotifyClient
 
 
 class QueueManager:

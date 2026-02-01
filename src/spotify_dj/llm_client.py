@@ -5,7 +5,7 @@ Provides queue suggestions based on user input and current queue state.
 
 import json
 import requests
-from config import LLMConfig
+from .config import LLMConfig
 
 
 class LLMClient:

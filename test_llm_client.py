@@ -3,7 +3,7 @@ Test script for LLMClient.
 """
 
 import json
-from llm_client import LLMClient
+from spotify_dj.llm_client import LLMClient
 
 
 def test_llm_client():

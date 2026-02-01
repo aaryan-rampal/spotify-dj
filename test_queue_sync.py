@@ -2,8 +2,8 @@
 Test script for QueueSync - verifies queue synchronization works correctly.
 """
 
-from spotify_client import SpotifyClient
-from queue_sync import QueueSync
+from spotify_dj.spotify_client import SpotifyClient
+from spotify_dj.queue_sync import QueueSync
 
 
 def test_queue_sync():

@@ -23,17 +23,24 @@ Why JIT: the Spotify Web API can add to queue, but does not support removing ite
 
 Python:
 - Tested with Python 3.12 (other versions not confirmed).
+- This project uses `uv` for package management.
 
-Create a virtual environment at `.venv/` (this repo commonly uses `.venv/bin/python` and `.venv/bin/pip`):
+Create a virtual environment at `.venv/`:
 
 ```bash
-python3 -m venv .venv
+uv venv
 ```
 
-Install dependencies:
+Install the package in editable mode:
 
 ```bash
-.venv/bin/pip install -r requirements.txt
+uv pip install -e .
+```
+
+For development with linting and testing tools:
+
+```bash
+uv pip install -e ".[dev]"
 ```
 
 Create your `.env`:
@@ -60,6 +67,12 @@ Spotify OAuth:
 Start the CLI:
 
 ```bash
+uv run python main.py
+```
+
+Or using the virtual environment directly:
+
+```bash
 .venv/bin/python main.py
 ```
 
@@ -70,7 +83,7 @@ Exit keywords: `exit`, `quit`, `bye`, `stop`.
 Enable debug logging:
 
 ```bash
-.venv/bin/python main.py --debug
+uv run python main.py --debug
 ```
 
 This writes session logs to `logs/session_<timestamp>_<pid>.jsonl`.
@@ -80,13 +93,13 @@ This writes session logs to `logs/session_<timestamp>_<pid>.jsonl`.
 Watch the latest debug session:
 
 ```bash
-.venv/bin/python monitor.py --latest
+uv run python monitor.py --latest
 ```
 
 Or watch a specific log file:
 
 ```bash
-.venv/bin/python monitor.py --file logs/session_<timestamp>_<pid>.jsonl
+uv run python monitor.py --file logs/session_<timestamp>_<pid>.jsonl
 ```
 
 ## Tests
@@ -94,12 +107,12 @@ Or watch a specific log file:
 These are runnable as standalone scripts:
 
 ```bash
-.venv/bin/python test_conversation.py
-.venv/bin/python test_llm_extraction.py
-.venv/bin/python test_llm_client.py
-.venv/bin/python test_spotify_client.py
-.venv/bin/python test_queue_sync.py
-.venv/bin/python test_jit_queue.py
+uv run python test_conversation.py
+uv run python test_llm_extraction.py
+uv run python test_llm_client.py
+uv run python test_spotify_client.py
+uv run python test_queue_sync.py
+uv run python test_jit_queue.py
 ```
 
 Notes:

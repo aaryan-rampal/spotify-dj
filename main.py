@@ -4,12 +4,12 @@ Integrates SpotifyClient, LLMClient, JITQueueSync, and ConversationHistory.
 """
 
 import sys
-from spotify_client import SpotifyClient
-from llm_client import LLMClient
-from queue_sync import JITQueueSync
-from conversation import ConversationHistory
+from spotify_dj.spotify_client import SpotifyClient
+from spotify_dj.llm_client import LLMClient
+from spotify_dj.queue_sync import JITQueueSync
+from spotify_dj.conversation import ConversationHistory
 import argparse
-from debug_writer import DebugWriter
+from spotify_dj.debug_writer import DebugWriter
 
 
 def display_welcome():

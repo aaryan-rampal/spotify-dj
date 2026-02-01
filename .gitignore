@@ -3,3 +3,8 @@
 .env
 logs/
 docs/
+build/
+dist/
+*.egg-info/
+.hatch/
+uv.lock

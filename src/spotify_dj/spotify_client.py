@@ -6,7 +6,7 @@ import os
 from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-from config import JITConfig
+from .config import JITConfig
 
 
 class SpotifyClient:
